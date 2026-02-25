@@ -10,22 +10,38 @@ load_dotenv()
 TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
 OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
 
-print(f"🔑 Token loaded: {'Yes' if TELEGRAM_BOT_TOKEN else 'No'}")
-print(f"🔑 Key loaded: {'Yes' if OPENROUTER_API_KEY else 'No'}")
+# Check karein keys load hui ya nahi
+print("=" * 50)
+print(f"🔑 Token loaded: {'YES ✅' if TELEGRAM_BOT_TOKEN else 'NO ❌'}")
+print(f"🔑 Key loaded: {'YES ✅' if OPENROUTER_API_KEY else 'NO ❌'}")
+if TELEGRAM_BOT_TOKEN:
+    print(f"📝 Token: {TELEGRAM_BOT_TOKEN[:20]}...")
+if OPENROUTER_API_KEY:
+    print(f"📝 Key: {OPENROUTER_API_KEY[:20]}...")
+print("=" * 50)
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("👋 Hello! Test kar rahe hain...")
+    print(f"✅ /start received from {update.effective_user.first_name}")
+    await update.message.reply_text("👋 Bot working! Send me any message.")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user = update.effective_user
     user_message = update.message.text
-    print(f"📩 User: {user_message}")
     
-    await context.bot.send_chat_action(chat_id=update.effective_chat.id, action='typing')
+    print(f"\n📩 {'='*40}")
+    print(f"👤 User: {user.first_name}")
+    print(f"💬 Message: {user_message}")
+    print(f"⏳ Sending typing action...")
     
     try:
-        print("🌐 Calling OpenRouter...")
+        await context.bot.send_chat_action(chat_id=update.effective_chat.id, action='typing')
+        print("✅ Typing action sent")
+        
+        print("🌐 Calling OpenRouter API...")
+        print(f"🔗 URL: https://openrouter.ai/api/v1/chat/completions")
+        print(f"🔐 Auth Header: Bearer {OPENROUTER_API_KEY[:15]}...")
         
         response = requests.post(
             url="https://openrouter.ai/api/v1/chat/completions",
@@ -36,33 +52,64 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "X-Title": "TelegramBot"
             },
             json={
-                "model": "gryphe/mythomist-7b:free",  # Changed model
+                "model": "gryphe/mythomist-7b:free",
                 "messages": [{"role": "user", "content": user_message}],
                 "max_tokens": 500
             },
             timeout=30
         )
         
+        print(f"📡 Response received!")
         print(f"📡 Status Code: {response.status_code}")
-        print(f"📡 Response: {response.text[:200]}")
+        print(f"📡 Headers: {dict(response.headers)}")
         
         if response.status_code == 200:
-            data = response.json()
-            ai_response = data['choices'][0]['message']['content']
-            await update.message.reply_text(ai_response)
+            try:
+                data = response.json()
+                print(f"📦 JSON parsed successfully")
+                print(f"📦 Keys in response: {list(data.keys())}")
+                
+                if 'choices' in data and len(data['choices']) > 0:
+                    ai_response = data['choices'][0]['message']['content']
+                    print(f"🤖 AI Response: {ai_response[:100]}...")
+                    
+                    print("📤 Sending reply to Telegram...")
+                    await update.message.reply_text(ai_response)
+                    print("✅ Reply sent successfully!")
+                else:
+                    print(f"❌ No choices in response: {data}")
+                    await update.message.reply_text("⚠️ AI ne kuch nahi kaha!")
+                    
+            except Exception as e:
+                print(f"❌ JSON parse error: {e}")
+                print(f"❌ Raw response: {response.text[:500]}")
+                await update.message.reply_text(f"⚠️ Data parse error: {e}")
         else:
-            await update.message.reply_text(f"⚠️ API Error: {response.status_code}\nCheck terminal for details")
+            print(f"❌ API Error: {response.status_code}")
+            print(f"❌ Response: {response.text[:500]}")
+            await update.message.reply_text(f"⚠️ API Error: {response.status_code}")
             
+    except requests.exceptions.Timeout:
+        print("❌ Request timeout!")
+        await update.message.reply_text("⏰ Timeout! Internet slow hai?")
+        
+    except requests.exceptions.ConnectionError:
+        print("❌ Connection error!")
+        await update.message.reply_text("🔌 Internet connection check karein!")
+        
     except Exception as e:
-        print(f"❌ Exception: {str(e)}")
+        print(f"❌ Unexpected error: {type(e).__name__}: {e}")
         await update.message.reply_text(f"❌ Error: {str(e)}")
 
 def main():
+    print("\n🚀 Starting bot...")
+    print("🤖 Bot is running! Send message in Telegram.\n")
+    
     application = Application.builder().token(TELEGRAM_BOT_TOKEN).build()
     application.add_handler(CommandHandler("start", start))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    print("🤖 Bot running...")
-    application.run_polling()
+    
+    application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == "__main__":
     main()
