@@ -13,8 +13,8 @@ logging.basicConfig(
     level=logging.INFO
 )
 
-TELEGRAM_BOT_TOKEN = "YOUR_BOT_TOKEN"
-GEMINI_API_KEY = "YOUR_GEMINI_API_KEY"
+TELEGRAM_BOT_TOKEN = "8792076630:AAGKboaI54WThB5WtQchT1joQf3ylRveUEU"
+GEMINI_API_KEY = "AIzaSyBTBeL_QX2fbZS2VUs_tvmbELvZ9VSy2m0"
 
 genai.configure(api_key=GEMINI_API_KEY)
 text_model = genai.GenerativeModel('gemini-pro')
