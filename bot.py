@@ -21,11 +21,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text
-    chat_id = update.effective_chat.id
     
     print(f"Received: {text}")
     
-    await context.bot.send_chat_action(chat_id=chat_id, action='typing')
+    await context.bot.send_chat_action(chat_id=update.effective_chat.id, action='typing')
     
     try:
         response = requests.post(
@@ -54,7 +53,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     app = Application.builder().token(TOKEN).build()
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.command, handle_message))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
     
     print("Bot started!")
     app.run_polling()
