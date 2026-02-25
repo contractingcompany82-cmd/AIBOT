@@ -7,8 +7,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-TELEGRAM_BOT_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
-OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
+TELEGRAM_BOT_TOKEN = os.getenv('8792076630:AAGKboaI54WThB5WtQchT1joQf3ylRveUEU')
+OPENROUTER_API_KEY = os.getenv('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')
 
 # Check karein keys load hui ya nahi
 print("=" * 50)
